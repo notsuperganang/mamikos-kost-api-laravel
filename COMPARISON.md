@@ -10,7 +10,7 @@ Two implementations of the same kost-search API were built for the Mamikos backe
 | Build / run | Composer, `php artisan serve` | Maven wrapper, `./mvnw spring-boot:run` or an executable jar |
 | Auth | Sanctum personal access tokens (opaque, hashed in DB, revocable) | Self-issued HS256 JWT validated by Spring's OAuth2 resource-server support (stateless) |
 | Schema | Laravel migrations | Flyway SQL migrations, Hibernate in `validate` mode |
-| Tests | Pest 5, 36 tests (≈200 assertions) against a real PostgreSQL database, run in < 1 s | JUnit 5 + Mockito + `MockMvcTester`, 43 tests, integration tests on Testcontainers PostgreSQL |
+| Tests | Pest 5, 37 tests (200 assertions) against a real PostgreSQL database, run in ≈ 1 s | JUnit 5 + Mockito + `MockMvcTester`, 44 tests, integration tests on Testcontainers PostgreSQL |
 | Style / CI | Pint, GitHub Actions with a PostgreSQL service | Spotless (google-java-format), GitHub Actions with Docker for Testcontainers |
 | Hand-written code (excl. tests) | ~1,650 lines PHP (incl. migrations, seeders, routes) | ~1,690 lines Java + 60 lines SQL |
 | Test code | ~440 lines | ~940 lines |
@@ -45,7 +45,7 @@ The recharge job is the most interesting piece: one CTE per role locks eligible 
 
 **Spring Boot** issues HS256 JWTs with `NimbusJwtEncoder` and validates them with the OAuth2 resource-server filter, the approach recommended by the Spring Security team over hand-written JWT filters. Roles come from a `role` claim mapped to `ROLE_*` authorities and enforced with `@PreAuthorize`; ownership is checked in `KostService`. Custom entry points return problem-detail JSON for 401/403. Spring Security's flexibility costs more configuration (~200 lines including the filter chain and JWT beans) and more concepts (filter chain, converters, method security).
 
-Trade-off: Sanctum tokens hit the database on every request but are revocable; JWTs are stateless but cannot be revoked before expiry without a denylist. For a single first-party API both are acceptable; the JWT approach is the natural fit if other services must verify tokens without a shared database.
+Trade-off: Sanctum tokens hit the database on every request but are revocable by deleting a row; JWTs are stateless, so logout needed a `revoked_tokens` denylist (`jti` + expiry, checked by a custom `OAuth2TokenValidator`, purged nightly), which reintroduces a lookup per request. For a single first-party API both are acceptable; the JWT approach is the natural fit if other services must verify tokens without a shared database.
 
 ## 4. Validation and error handling
 
@@ -73,8 +73,8 @@ Laravel's scheduler is the more complete out-of-the-box answer (locking, overlap
 
 Both suites exercise the same scenarios over HTTP: credit per role, duplicate email, login failures, the 401/403 matrix, owner isolation, search filters/sort/pagination, credit deduction, insufficient credit, 404 without charge, and recharge idempotency.
 
-- **Laravel**: Pest's expressive syntax, `RefreshDatabase`, factories with states (`->owner()`, `->withCredit(4)`), `Sanctum::actingAs`. Tests are short (≈440 lines for 36 tests). Running against PostgreSQL instead of SQLite keeps `ILIKE` and CHECK constraints honest; the whole suite runs in under a second.
-- **Spring**: `@SpringBootTest` + `@AutoConfigureMockMvc` + Testcontainers `@ServiceConnection` boots the full context against a throwaway PostgreSQL container; `MockMvcTester` with AssertJ JSON-path assertions; Mockito unit tests for services. More verbose (≈940 lines for 43 tests) and slower to start (container + context ≈ 30 s), but every layer, including security and Flyway, is tested exactly as in production.
+- **Laravel**: Pest's expressive syntax, `RefreshDatabase`, factories with states (`->owner()`, `->withCredit(4)`), `Sanctum::actingAs`. Tests are short (≈450 lines for 37 tests). Running against PostgreSQL instead of SQLite keeps `ILIKE` and CHECK constraints honest; the whole suite runs in under a second.
+- **Spring**: `@SpringBootTest` + `@AutoConfigureMockMvc` + Testcontainers `@ServiceConnection` boots the full context against a throwaway PostgreSQL container; `MockMvcTester` with AssertJ JSON-path assertions; Mockito unit tests for services. More verbose (≈960 lines for 44 tests) and slower to start (container + context ≈ 30 s), but every layer, including security and Flyway, is tested exactly as in production.
 
 ## 7. Developer experience
 
@@ -105,7 +105,7 @@ Both: bcrypt password hashing, tokens never logged, secrets via environment, val
 
 ## 10. What was deliberately not built
 
-Hexagonal layers, CQRS, repository-over-Eloquent, Redis caching, Elasticsearch, OAuth2 authorization server, refresh tokens, permission tables, Kubernetes manifests, message queues. Each would add code without changing the observable behaviour of a ten-endpoint API. The first upgrades if the product grows would be: ShedLock (Spring) for multi-instance scheduling, a JWT denylist or short-lived tokens with refresh (Spring), soft deletes for kosts, `pg_trgm` indexes for search, and OpenAPI documentation.
+Hexagonal layers, CQRS, repository-over-Eloquent, Redis caching, Elasticsearch, OAuth2 authorization server, refresh tokens, permission tables, Kubernetes manifests, message queues. Each would add code without changing the observable behaviour of a ten-endpoint API. The first upgrades if the product grows would be: ShedLock (Spring) for multi-instance scheduling, short-lived tokens with refresh (Spring), soft deletes for kosts, `pg_trgm` indexes for search, and OpenAPI documentation.
 
 ## 11. Recommendation
 
