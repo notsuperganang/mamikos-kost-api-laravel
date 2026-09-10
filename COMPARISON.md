@@ -90,7 +90,7 @@ Both suites exercise the same scenarios over HTTP: credit per role, duplicate em
 
 | | Laravel (`php artisan serve`) | Spring Boot (`spring-boot:run`) |
 |---|---|---|
-| Startup | < 1 s (per-request bootstrap ≈ 20–40 ms) | ≈ 3–4 s JVM + context |
+| Startup | < 1 s (per-request bootstrap ≈ 20–40 ms) | ≈ 4.5 s to "Started" on this machine (JVM + context + Flyway) |
 | Resident memory | ≈ 30 MB per PHP worker | ≈ 250–300 MB JVM heap + metaspace |
 | Throughput model | Process-per-request (PHP-FPM / Octane for persistent workers) | Long-lived JVM with virtual threads enabled; JIT warms up over time |
 
