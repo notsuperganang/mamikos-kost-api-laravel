@@ -11,6 +11,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('register', [AuthController::class, 'register'])->middleware('throttle:auth')->name('register');
         Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth')->name('login');
         Route::get('me', [AuthController::class, 'me'])->middleware('auth:sanctum')->name('me');
+        Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('logout');
     });
 
     Route::get('kosts', [KostController::class, 'index'])->name('kosts.index');

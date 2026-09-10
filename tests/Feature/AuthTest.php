@@ -82,3 +82,15 @@ it('accepts the issued token on protected endpoints', function () {
 
     $this->withToken($token)->getJson('/api/v1/auth/me')->assertOk()->assertJsonPath('email', 'ana@example.com');
 });
+
+it('revokes the current token on logout', function () {
+    $token = $this->postJson('/api/v1/auth/register', [
+        'name' => 'Ana', 'email' => 'ana@example.com', 'password' => 'secret-123', 'role' => 'regular',
+    ])->json('token');
+
+    $this->withToken($token)->postJson('/api/v1/auth/logout')->assertNoContent();
+
+    app('auth')->forgetGuards(); // the test app memoises the resolved user between requests
+    $this->withToken($token)->getJson('/api/v1/auth/me')->assertUnauthorized();
+    $this->postJson('/api/v1/auth/logout')->assertUnauthorized();
+});

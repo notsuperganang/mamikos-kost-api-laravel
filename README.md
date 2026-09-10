@@ -33,6 +33,7 @@ Base path: `/api/v1`. Requests and responses are JSON with `snake_case` keys. Au
 | `POST` | `/auth/register` | – | Body `{name, email, password, role}`; `role` ∈ `owner`, `regular`, `premium`. Returns `201` with `{token, token_type, expires_in, user}` |
 | `POST` | `/auth/login` | – | Body `{email, password}`. Returns `{token, token_type, expires_in, user}` |
 | `GET` | `/auth/me` | any | Current user including `credit` |
+| `POST` | `/auth/logout` | any | Revokes the token used for the request → `204` |
 | `GET` | `/owner/kosts` | owner | Paginated list of the caller's kosts (`page`, `per_page` ≤ 50) |
 | `POST` | `/owner/kosts` | owner | Body `{name, location, price, available_rooms, description?}` → `201` |
 | `PUT` | `/owner/kosts/{id}` | owner | Full update; `403` if the kost belongs to someone else |

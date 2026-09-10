@@ -9,6 +9,7 @@ use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class AuthController extends Controller
 {
@@ -27,5 +28,15 @@ class AuthController extends Controller
     public function me(Request $request): UserResource
     {
         return new UserResource($request->user());
+    }
+
+    /**
+     * Revokes the token used for this request; other sessions stay valid.
+     */
+    public function logout(Request $request): Response
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->noContent();
     }
 }
