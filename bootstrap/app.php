@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);
+
+        // This is an API: unauthenticated requests get a 401 problem, never a redirect.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : url('/'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

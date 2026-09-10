@@ -67,6 +67,7 @@ it('logs in with valid credentials and rejects bad ones', function () {
 
 it('requires a valid token for the current user endpoint', function () {
     $this->getJson('/api/v1/auth/me')->assertUnauthorized()->assertJsonPath('type', '/problems/unauthorized');
+    $this->get('/api/v1/auth/me')->assertUnauthorized()->assertJsonPath('type', '/problems/unauthorized');
     $this->withToken('garbage')->getJson('/api/v1/auth/me')->assertUnauthorized();
 
     Sanctum::actingAs(User::factory()->premium()->create());

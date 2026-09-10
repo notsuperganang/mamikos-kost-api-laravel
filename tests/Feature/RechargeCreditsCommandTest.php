@@ -2,6 +2,8 @@
 
 use App\Models\CreditTransaction;
 use App\Models\User;
+use Illuminate\Console\Scheduling\Event;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
 
 it('resets regular and premium users to their allowance and leaves owners alone', function () {
@@ -53,9 +55,15 @@ it('reports eligible users without changing anything in dry-run mode', function 
     expect($user->fresh()->credit)->toBe(1);
 });
 
-it('is scheduled on the first day of every month', function () {
-    $this->artisan('schedule:list')
-        ->expectsOutputToContain('0 0 1 * *')
-        ->expectsOutputToContain('credits:recharge')
-        ->assertSuccessful();
+it('is scheduled on the first day of every month, on one server, without overlapping', function () {
+    $this->artisan('schedule:list')->assertSuccessful(); // boots the console routes
+
+    $event = collect(app(Schedule::class)->events())
+        ->first(fn (Event $event) => str_contains($event->command ?? '', 'credits:recharge'));
+
+    expect($event)->not->toBeNull()
+        ->and($event->expression)->toBe('0 0 1 * *')
+        ->and($event->timezone)->toBe(config('credits.timezone'))
+        ->and($event->onOneServer)->toBeTrue()
+        ->and($event->withoutOverlapping)->toBeTrue();
 });
