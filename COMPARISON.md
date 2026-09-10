@@ -10,7 +10,7 @@ Two implementations of the same kost-search API were built for the Mamikos backe
 | Build / run | Composer, `php artisan serve` | Maven wrapper, `./mvnw spring-boot:run` or an executable jar |
 | Auth | Sanctum personal access tokens (opaque, hashed in DB, revocable) | Self-issued HS256 JWT validated by Spring's OAuth2 resource-server support (stateless) |
 | Schema | Laravel migrations | Flyway SQL migrations, Hibernate in `validate` mode |
-| Tests | Pest 5, 37 tests (200 assertions) against a real PostgreSQL database, run in ≈ 1 s | JUnit 5 + Mockito + `MockMvcTester`, 44 tests, integration tests on Testcontainers PostgreSQL |
+| Tests | Pest 5, 37 tests (200 assertions) against a real PostgreSQL database, run in ≈ 1 s | JUnit 5 + Mockito + `MockMvcTester`, 43 tests, integration tests on Testcontainers PostgreSQL |
 | Style / CI | Pint, GitHub Actions with a PostgreSQL service | Spotless (google-java-format), GitHub Actions with Docker for Testcontainers |
 | Hand-written code (excl. tests) | ~1,650 lines PHP (incl. migrations, seeders, routes) | ~1,690 lines Java + 60 lines SQL |
 | Test code | ~440 lines | ~940 lines |
@@ -74,7 +74,7 @@ Laravel's scheduler is the more complete out-of-the-box answer (locking, overlap
 Both suites exercise the same scenarios over HTTP: credit per role, duplicate email, login failures, the 401/403 matrix, owner isolation, search filters/sort/pagination, credit deduction, insufficient credit, 404 without charge, and recharge idempotency.
 
 - **Laravel**: Pest's expressive syntax, `RefreshDatabase`, factories with states (`->owner()`, `->withCredit(4)`), `Sanctum::actingAs`. Tests are short (≈450 lines for 37 tests). Running against PostgreSQL instead of SQLite keeps `ILIKE` and CHECK constraints honest; the whole suite runs in under a second.
-- **Spring**: `@SpringBootTest` + `@AutoConfigureMockMvc` + Testcontainers `@ServiceConnection` boots the full context against a throwaway PostgreSQL container; `MockMvcTester` with AssertJ JSON-path assertions; Mockito unit tests for services. More verbose (≈960 lines for 44 tests) and slower to start (container + context ≈ 30 s), but every layer, including security and Flyway, is tested exactly as in production.
+- **Spring**: `@SpringBootTest` + `@AutoConfigureMockMvc` + Testcontainers `@ServiceConnection` boots the full context against a throwaway PostgreSQL container; `MockMvcTester` with AssertJ JSON-path assertions; Mockito unit tests for services. More verbose (≈960 lines for 43 tests) and slower to start (container + context ≈ 30 s), but every layer, including security and Flyway, is tested exactly as in production.
 
 ## 7. Developer experience
 
